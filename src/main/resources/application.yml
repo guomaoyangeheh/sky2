@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sky2
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://www.gmy.com:3306/gmy_test1?serverTimezone=UTC
+    username: root
+    password: 123456
+
+
+mybatis-plus:
+  configLocation: classpath:mybatis/mybatis-config.xml
+  mapperLocations: classpath:mybatis/mapper/*.xml
