@@ -418,6 +418,51 @@ public class CompletableFutureTest2 {
         List<CompletableFuture<Integer>> completableFutures = new ArrayList<>();
         completableFutures.add(completableFuture1);
         completableFutures.add(completableFuture2);
+        /**
+         *  allOf() 当所有给定的CompletableFuture都"完成时完成"，返回一个新的CompletableFuture
+         *  通过新的completableFuture，能知道集合中的completableFuture都完成了。
+         */
+        CompletableFuture<Void> completableFuture = CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]));
+        System.out.println("allOf()返回时间：" + System.currentTimeMillis());
+        completableFuture.join();
+        System.out.println("allOf()执行完成时间：" + System.currentTimeMillis());
+        CompletableFuture<List<Integer>> listCompletableFuture = completableFuture.thenApply((t) -> {
+            System.out.println("所有线程任务执行完毕...,allOf线程名：" + Thread.currentThread().getName());
+            // 聚合所有线程任务结果
+            return completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+
+        });
+        // 直接通过流处理，map join() 然后聚合结果，这样的话感觉和allOf()效果一样
+        //List<Integer> collect = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+        //listCompletableFuture.join();
+        System.out.println("所有任务执行完成，聚合结果：" + listCompletableFuture.join());
+    }
+
+    @Test
+    public void allOfException(){
+        CompletableFuture<Integer> completableFuture1 = CompletableFuture.supplyAsync(() -> {
+            System.out.println("任务1 线程名：" + Thread.currentThread().getName()+"开始执行...");
+            try { Thread.sleep(50); } catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
+            System.out.println("任务1 线程名：" + Thread.currentThread().getName()+"执行完毕");
+            return 1;
+        }, executorService);
+        CompletableFuture<Integer> completableFuture2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println("任务2 线程名：" + Thread.currentThread().getName()+"开始执行...");
+            try { Thread.sleep(200); } catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
+            if (1 == 1) {
+                throw new RuntimeException("测试异常");
+            }
+            System.out.println("任务2 线程名：" + Thread.currentThread().getName()+"执行完毕");
+            return 2;
+        }, executorService).exceptionally((throwable -> {
+            System.out.println(Thread.currentThread().getName() + "执行发生异常");
+            return 0;
+        }));
+
+        List<CompletableFuture<Integer>> completableFutures = new ArrayList<>();
+        completableFutures.add(completableFuture1);
+        completableFutures.add(completableFuture2);
+
         CompletableFuture<Void> completableFuture = CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]));
         CompletableFuture<List<Integer>> listCompletableFuture = completableFuture.thenApply((t) -> {
             System.out.println("所有线程任务执行完毕...,allOf线程名：" + Thread.currentThread().getName());
@@ -425,7 +470,14 @@ public class CompletableFutureTest2 {
             return completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 
         });
-        //listCompletableFuture.join();
         System.out.println("所有任务执行完成，聚合结果：" + listCompletableFuture.join());
+    }
+
+    @Test
+    public void allOfException2(){
+        ArrayList<Object> objects = new ArrayList<>();
+        objects.add(1);
+        objects.add(2);
+        System.out.println(objects);
     }
 }

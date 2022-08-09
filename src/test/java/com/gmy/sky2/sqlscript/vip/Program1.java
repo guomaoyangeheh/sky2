@@ -4,6 +4,7 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.file.FileWriter;
+import cn.hutool.json.JSONUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import com.gmy.sky2.sqlscript.vo.*;
@@ -68,7 +69,15 @@ public class Program1 {
     private static String sql17 ="update b2b_vip_rights_ins set work_end_time = '%s',gmt_modified=now()  where partner_name = '%s' and status in (2,3) and is_deleted = 0;";
 
     // 订正退款时间
-    private static String sql18 ="UPDATE b2b_vip_management_grant set refund_time = '%s',gmt_modified = now() where vip_management_grant_no = '%s';";
+    private static String sql18 ="UPDATE b2b_vip_management_|grant set refund_time = '%s',gmt_modified = now() where vip_management_grant_no = '%s';";
+
+    @Test
+    public void contractCorrect15(){
+        ExcelReader reader = ExcelUtil.getReader("/Users/guomaoyang/Desktop/20220627_批量发放会员.xlsx");
+
+        List<CreateVipForm> createVipForms = reader.readAll(CreateVipForm.class);
+        System.out.println(JSONUtil.toJsonStr(createVipForms));
+    }
 
 
     @Test
@@ -87,11 +96,11 @@ public class Program1 {
 
     @Test
     public void contractCorrect13(){
-        ExcelReader reader = ExcelUtil.getReader("/Users/mac/Desktop/2021年12月会员数据订正/20211231_分销通会员延长有效期.xlsx");
+        ExcelReader reader = ExcelUtil.getReader("/Users/guomaoyang/Desktop/会员延期_20220729.xlsx");
 
         List<VipVO1> vos = reader.readAll(VipVO1.class);
         FileWriter fileWriter = new FileWriter("updateSql.sql");
-        fileWriter.append("-- 延长分销通会员有效期\n");
+        fileWriter.append("-- 延长会员有效期\n");
         for (VipVO1 vo : vos) {
             String format = String.format(sql15,vo.getEndTime(),vo.getPartnerName() );
             fileWriter.append("-- "+vo.getPartnerName()+"\n");
