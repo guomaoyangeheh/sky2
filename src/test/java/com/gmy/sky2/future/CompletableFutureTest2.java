@@ -1,13 +1,12 @@
 package com.gmy.sky2.future;
 
+import com.google.common.util.concurrent.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +15,77 @@ import java.util.stream.Collectors;
  */
 public class CompletableFutureTest2 {
     private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+    private static final ListeningExecutorService guavaExecutor = MoreExecutors.listeningDecorator(executorService);
+
+    @Test
+    public void futureTest() throws ExecutionException, InterruptedException {
+        // java8之前 异步计算结果
+        Future<Integer> future = executorService.submit(() -> {
+            try {Thread.sleep(200);} catch (InterruptedException e) {e.printStackTrace();}
+            System.out.println("执行线程名称："+Thread.currentThread().getName());
+            return 1;
+        });
+        // doSomething....
+        System.out.println(future.get());
+    }
+    @Test
+    public void futureTest2() throws InterruptedException {
+        ListenableFuture<String> future1 = guavaExecutor.submit(() -> {
+            //step 1
+            System.out.println(Thread.currentThread().getName() + " 执行step 1");
+            return "step1 result";
+        });
+        ListenableFuture<String> future2 = guavaExecutor.submit(() -> {
+            //step 2
+            System.out.println(Thread.currentThread().getName() + " 执行step 2");
+            return "step2 result";
+        });
+        ListenableFuture<List<String>> future1And2 = Futures.allAsList(future1, future2);
+        Futures.addCallback(future1And2, new FutureCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> result) {
+                System.out.println(Thread.currentThread().getName() + " step1 & step2执行成功，打印结果："+result);
+                ListenableFuture<String> future3 = guavaExecutor.submit(() -> {
+                    System.out.println(Thread.currentThread().getName() + " 执行step 3");
+                    return "step3 result";
+                });
+                Futures.addCallback(future3, new FutureCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        System.out.println(Thread.currentThread().getName() + " step3执行成功，打印结果：" + result);
+                    }
+                    @Override
+                    public void onFailure(Throwable t) {
+                    }
+                }, guavaExecutor);
+            }
+            @Override
+            public void onFailure(Throwable t) {
+            }}, guavaExecutor);
+
+        Thread.sleep(1000);
+    }
+
+    @Test
+    public void completableFutureTest(){
+        CompletableFuture<String> cf1 = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName() + " 执行step 1");
+            return "step1 result";
+        }, executorService);
+        CompletableFuture<String> cf2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName() + " 执行step 2");
+            return "step2 result";
+        },executorService);
+        CompletableFuture<String> cf3 = cf1.thenCombineAsync(cf2, (result1, result2) -> {
+            System.out.println(Thread.currentThread().getName() + " step1 & step2执行完成，打印结果[" + result1 + "，" + result2+"]");
+            return "step3 result";
+        },executorService);
+        String cf3Result = cf3.join();
+        System.out.println("step3执行成功，打印结果：" + cf3Result);
+    }
+
+
 
     /**
      *  创建一个CompletableFuture对象的几种方式
